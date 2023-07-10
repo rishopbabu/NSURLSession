@@ -101,7 +101,7 @@ class ViewController: UIViewController {
         // Params if any
         let parameters = ["String": "String" ]
         
-        guard let url = URL(string: "YOUR SAMPLE URL") else { return }
+        guard let url = URL(string: "https://www.youtube.com/watch?v=RVLNBVK8auM") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
@@ -119,9 +119,33 @@ class ViewController: UIViewController {
             
             if let data = data {
                 print("Received data: \(data)")
+                guard let fileExtension = response?.suggestedFilename?.components(separatedBy: ".").last else {
+                    // Default to a generic file extension if the suggested filename is not available
+                    let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("downloadedFile.bin")
+                    self.saveDataToFile(data: data, fileURL: fileURL)
+                    return
+                }
+                let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("downloadedFile.\(fileExtension)")
+                self.saveDataToFile(data: data, fileURL: fileURL)
             }
         }.resume()
         
+    }
+    
+    func saveDataToFile(data: Data, fileURL: URL?) {
+        guard let fileURL = fileURL else {
+            // Handle invalid file URL
+            return
+        }
+        
+        do {
+            try data.write(to: fileURL)
+            // File saved successfully
+            print("File saved at: \(fileURL.path)")
+        } catch {
+            // Error handling for file save failure
+            print("Error saving file: \(error)")
+        }
     }
 
 }
