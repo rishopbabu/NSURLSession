@@ -6,11 +6,12 @@
 //
 
 import UIKit
+import MobileCoreServices
 
 typealias Parameters =  [String: String]
 
 // Struct for Video
-struct UploadVideo {
+struct UploadData {
     let key: String
     let filename: String
     let data: Data
@@ -47,22 +48,81 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        //dataUpload()
+        dataDownload()
     }
     
     private func dataUpload() {
         
-        let parameters = ["title": "sampletest",
-                          "channelId": "61c2f3772e0cbd194220a30b",
-                          "categoryId": "61cda3a28d78564104af13e8",
-                          "subCategoryId": "61dc18a49264c843dc187dc3",
-                          "tags": "Testtwotesttwo",
-                          "isUploadedByFan": "false" ]
+        // Params if any
+        let parameters = ["String": "String" ]
         
-        /// Image want to upload
-        let image = UIImage(named: "")
-        guard let mediaImage = UploadImage(withImage: image ?? UIImage(), forKey: "file")  else { return }
+        /// Video upload
+        let fileURL = URL(fileURLWithPath: "YOUR FILE PATH URL")
+        guard let urlData = UploadData(withData: fileURL, forKey: "file") else { return }
+        
+        guard let url = URL(string: "YOUR URL") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        let boundary = generateBoundary()
+        let tokenStr = "Authorized Token if ANY"
+        
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("jwt \(tokenStr)", forHTTPHeaderField: "Authorization")
+        
+        let dataBody = createDataBody(withParameters: parameters, media: urlData, boundary: boundary)
+        request.httpBody = dataBody
+        
+        print(request.httpBody as Any)
+        print(dataBody)
+        
+        let session = URLSession.shared
+        session.dataTask(with: request) { (data, response, error) in
+            if let response = response {
+                print(response)
+            }
+            
+            if let data = data {
+                do {
+                    print(String(data: data, encoding: .utf8) as Any)
+                    let json = try JSONSerialization.jsonObject(with: data, options: [])
+                    print(json)
+                } catch {
+                    print(error)
+                }
+            }
+        }.resume()
+        
     }
-
+    
+    private func dataDownload() {
+        
+        // Params if any
+        let parameters = ["String": "String" ]
+        
+        guard let url = URL(string: "YOUR SAMPLE URL") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        let boundary = generateBoundary()
+        let tokenStr = ""
+        
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("jwt \(tokenStr)", forHTTPHeaderField: "Authorization")
+        
+        let session = URLSession.shared
+        session.dataTask(with: request) { (data, response, error) in
+            if let response = response {
+                print(response)
+            }
+            
+            if let data = data {
+                print("Received data: \(data)")
+            }
+        }.resume()
+        
+    }
 
 }
 
@@ -81,7 +141,7 @@ extension ViewController {
     ///   - media: Type of struct
     ///   - boundary: Genetated Boundary
     /// - Returns: Data
-    func createDataBody(withParameters params: Parameters?, media: UploadImage?, boundary: String) -> Data {
+    func createDataBody(withParameters params: Parameters?, media: UploadData?, boundary: String) -> Data {
 
         let lineBreak = "\r\n"
         var body = Data()
